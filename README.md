@@ -1,6 +1,5 @@
-# Phaser 3 TypeScript Project Template
-
-This quick-start project template combines Phaser 3.50 with [TypeScript 4](https://www.typescriptlang.org/) and uses [Rollup](https://rollupjs.org) for bundling.
+## About
+This project has been created as a game attempt to teach kids programming principles and thinking.
 
 ## Requirements
 
