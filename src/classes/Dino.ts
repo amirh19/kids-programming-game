@@ -52,8 +52,8 @@ export default class Dino extends Phaser.GameObjects.Sprite {
     this.play(`${this.texture.key}-idle`, true);
     this.body.setVelocity(0);
   }
-  up() {
-    this.body.setVelocityY(-160);
+  runUp() {
+    this.body.setVelocityY(-32);
     this.body.setVelocityX(0);
     this.play(`${this.texture.key}-run`, true);
     if (this.flipX) {
@@ -65,20 +65,20 @@ export default class Dino extends Phaser.GameObjects.Sprite {
   runRight() {
     this.setFlipX(false);
     this.setRotation(0);
-    this.body.setVelocityX(160);
+    this.body.setVelocityX(32);
     this.body.setVelocityY(0);
     this.play(`${this.texture.key}-run`, true);
   }
   runLeft() {
     this.body.setVelocityY(0);
-    this.body.setVelocityX(-160);
+    this.body.setVelocityX(-32);
     this.setRotation(0);
     this.play(`${this.texture.key}-run`, true);
     this.setFlipX(true);
   }
   runDown() {
     this.body.setVelocityX(0);
-    this.body.setVelocityY(160);
+    this.body.setVelocityY(32);
     this.play(`${this.texture.key}-run`, true);
     if (this.flipX) {
       this.setRotation(-1.5708);

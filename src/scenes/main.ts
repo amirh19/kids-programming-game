@@ -2,7 +2,10 @@ import Dino from "../classes/Dino";
 import { BLOCK_SIZE, DINO_H, DINO_W } from "../constants";
 
 export default class Main extends Phaser.Scene {
+  instructions: string[] = [];
   dino: Dino;
+  posX: number = 25;
+  posY: number = 665;
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   constructor() {
     super("Main");
@@ -40,24 +43,74 @@ export default class Main extends Phaser.Scene {
     this.physics.add.collider(this.dino, world);
     this.dino.body.setCollideWorldBounds(true);
     this.cursors = this.input.keyboard.createCursorKeys();
-
     // draw controls
-    const arrow_up = this.add.image(700, 100, "arrow_up");
-    const arrow_down = this.add.image(700, 150, "arrow_down");
-    const arrow_left = this.add.image(650, 150, "arrow_left");
-    const arrow_right = this.add.image(750, 150, "arrow_right");
+    const arrow_up = this.add.image(640 + 75, 100, "arrow_up");
+    const arrow_down = this.add.image(640 + 75, 150, "arrow_down");
+    const arrow_left = this.add.image(640 + 25, 150, "arrow_left");
+    const arrow_right = this.add.image(640 + 125, 150, "arrow_right");
+    arrow_up.setInteractive();
+    arrow_down.setInteractive();
+    arrow_left.setInteractive();
+    arrow_right.setInteractive();
+    arrow_up.on("pointerdown", () => {
+      this.instructions.push("arrow_up");
+      this.addNewArrow("arrow_up");
+    });
+    arrow_down.on("pointerdown", () => {
+      this.instructions.push("arrow_down");
+      this.addNewArrow("arrow_down");
+    });
+    arrow_left.on("pointerdown", () => {
+      this.instructions.push("arrow_left");
+      this.addNewArrow("arrow_left");
+    });
+    arrow_right.on("pointerdown", () => {
+      this.instructions.push("arrow_right");
+      this.addNewArrow("arrow_right");
+    });
+    const start = this.add.text(640 + 20, 300, "start");
+    start.setInteractive();
+    start.setText("Iniciar");
+    start.setScale(2);
+    start.on(
+      "pointerdown",
+      function () {
+        const count = this.instructions.length;
+        this.time.addEvent({
+          callback: () => {
+            const step = this.instructions.shift();
+            switch (step) {
+              case "arrow_up":
+                this.dino.runUp();
+                break;
+              case "arrow_down":
+                this.dino.runDown();
+                break;
+              case "arrow_left":
+                this.dino.runLeft();
+                break;
+              case "arrow_right":
+                this.dino.runRight();
+                break;
+              case undefined:
+                this.scene.restart();
+                break;
+            }
+          },
+          callbackScope: this,
+          delay: 1000,
+          repeat: count,
+        });
+      }.bind(this)
+    );
   }
-  update(time: number, delta: number): void {
-    /* if (this.cursors.left.isDown) {
-      this.dino.runLeft();
-    } else if (this.cursors.right.isDown) {
-      this.dino.runRight();
-    } else if (this.cursors.down.isDown) {
-      this.dino.runDown();
-    } else if (this.cursors.up.isDown) {
-      this.dino.up();
-    } else {
-      this.dino.playIdle();
-    } */
+  update(time: number, delta: number): void {}
+  addNewArrow(type: string) {
+    this.add.image(this.posX, this.posY, type);
+    this.posX += 50;
+    if (this.posX > 840) {
+      this.posX = 25;
+      this.posY += 50;
+    }
   }
 }

@@ -3,8 +3,8 @@ import * as Scenes from "./scenes";
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   backgroundColor: "#125555",
-  width: 800,
-  height: 600,
+  width: 840,
+  height: 840,
   scene: Scenes.Main,
   physics: {
     default: "arcade",
