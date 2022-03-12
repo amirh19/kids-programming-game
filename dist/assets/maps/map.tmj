@@ -60,7 +60,7 @@
         {
          "columns":16,
          "firstgid":1,
-         "image":"..\/..\/..\/..\/..\/..\/Downloads\/LPC_forest\/forest_tiles.png",
+         "image":"./forest_tiles.png",
          "imageheight":512,
          "imagewidth":512,
          "margin":0,

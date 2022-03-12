@@ -45,6 +45,17 @@ export default class Dino extends Phaser.GameObjects.Sprite {
         repeat: -1,
       });
     }
+    if(!scene.anims.exists(`${this.texture.key}-die`)){
+      scene.anims.create({
+        key:`${this.texture.key}-die`,
+        frames:scene.anims.generateFrameNumbers(this.texture.key,{
+          start:11,
+          end:14
+        }),
+        frameRate:8,
+        repeat:1
+      });
+    }
     scene.add.existing(this);
     return this;
   }
@@ -85,5 +96,9 @@ export default class Dino extends Phaser.GameObjects.Sprite {
     } else {
       this.setRotation(1.5708);
     }
+  }
+  died(){
+    this.body.setVelocity(0);
+    this.play(`${this.texture.key}-die`, true);
   }
 }
