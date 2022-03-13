@@ -9,6 +9,8 @@ export default abstract class BaseScene extends Phaser.Scene {
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   map: Phaser.Tilemaps.TilemapLayer;
   pathToMap: string;
+  goal: Phaser.Tilemaps.TilemapLayer;
+  hasWon: boolean;
   constructor(sceneName: string, mapURI: string) {
     super(sceneName);
     this.pathToMap = mapURI;
@@ -22,14 +24,24 @@ export default abstract class BaseScene extends Phaser.Scene {
     Dino.preloadAssets(this, "red");
   }
   preloadMapAssets() {
-    this.load.image("tiles", "assets/maps/forest_tiles.png");
-    this.load.tilemapTiledJSON("forest", this.pathToMap);
+    if (!this.textures.exists("tiles")) {
+      this.load.image("tiles", "assets/maps/forest_tiles.png");
+    }
+    this.load.tilemapTiledJSON(this.scene.key + "map", this.pathToMap);
   }
   preloadControlAssets() {
-    this.load.image("arrow_up", "assets/KeyboardButtonsDir_up.png");
-    this.load.image("arrow_down", "assets/KeyboardButtonsDir_down.png");
-    this.load.image("arrow_left", "assets/KeyboardButtonsDir_left.png");
-    this.load.image("arrow_right", "assets/KeyboardButtonsDir_right.png");
+    if (!this.textures.exists("arrow_up")) {
+      this.load.image("arrow_up", "assets/KeyboardButtonsDir_up.png");
+    }
+    if (!this.textures.exists("arrow_down")) {
+      this.load.image("arrow_down", "assets/KeyboardButtonsDir_down.png");
+    }
+    if (!this.textures.exists("arrow_left")) {
+      this.load.image("arrow_left", "assets/KeyboardButtonsDir_left.png");
+    }
+    if (!this.textures.exists("arrow_right")) {
+      this.load.image("arrow_right", "assets/KeyboardButtonsDir_right.png");
+    }
   }
 
   create() {
@@ -39,6 +51,7 @@ export default abstract class BaseScene extends Phaser.Scene {
     this.createControls();
   }
   initValues() {
+    this.hasWon = false;
     this.instructions = [];
     this.posX = 25;
     this.posY = 665;
@@ -73,7 +86,6 @@ export default abstract class BaseScene extends Phaser.Scene {
     const start = this.add.text(640 + 20, 300, "start");
     start.setInteractive();
     start.setText("Iniciar");
-    start.setScale(2);
     start.on(
       "pointerdown",
       function () {
@@ -95,9 +107,6 @@ export default abstract class BaseScene extends Phaser.Scene {
               case "arrow_right":
                 this.player.runRight();
                 break;
-              case undefined:
-                this.checkIfPlayerWon();
-                break;
             }
           },
           callbackScope: this,
@@ -115,15 +124,7 @@ export default abstract class BaseScene extends Phaser.Scene {
     this.player.body.setCollideWorldBounds(true);
   }
   playerDies() {
-    this.player.died();
-    this.time.addEvent({
-      callback: () => {
-        this.scene.restart();
-      },
-      callbackScope: this,
-      repeat: 0,
-      delay: 1000,
-    });
+    this.nextScene();
   }
   addNewArrow(type: string) {
     this.add.image(this.posX, this.posY, type);
@@ -135,7 +136,7 @@ export default abstract class BaseScene extends Phaser.Scene {
   }
   createMapAndPlayer(x: number, y: number) {
     const map = this.make.tilemap({
-      key: "forest",
+      key: this.scene.key + "map",
       tileWidth: BLOCK_SIZE,
       tileHeight: BLOCK_SIZE,
     });
@@ -143,7 +144,7 @@ export default abstract class BaseScene extends Phaser.Scene {
     map.createLayer("background", tileset);
     this.map = map.createLayer("world", tileset);
     map.createLayer("path", tileset);
-    map.createLayer("goal", tileset);
+    this.goal = map.createLayer("goal", tileset);
     this.map.setCollisionByProperty({ collide: true }, true);
     this.player = new Dino(
       this,
@@ -152,8 +153,28 @@ export default abstract class BaseScene extends Phaser.Scene {
       "red"
     );
     this.physics.add.existing(this.player);
+    this.player.body.setSize(5, 5, true);
   }
-  checkIfPlayerWon() {
-    this.playerDies();
+  playerWon() {
+    this.add
+      .text(320, 320, "Ganaste", {
+        fontSize: "32",
+      })
+      .setScale(2);
+  }
+  update(time: number, delta: number): void {
+    try {
+      if (!this.hasWon) {
+        const tile = this.goal.getTileAtWorldXY(this.player.x, this.player.y);
+        if (tile) {
+          this.hasWon = true;
+          this.playerWon();
+          this.nextScene();
+        }
+      }
+    } catch (error) {}
+  }
+  nextScene() {
+    this.scene.transition({ target: this.scene.key, duration: 0 });
   }
 }
