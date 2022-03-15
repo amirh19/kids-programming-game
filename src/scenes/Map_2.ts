@@ -11,6 +11,6 @@ export default class Map_2 extends BaseScene {
     this.createControls();
   }
   nextScene(): void {
-    this.scene.transition({ target: "Map_1", duration: 0 });
+    this.scene.transition({ target: "Map_3", duration: 0 });
   }
 }
