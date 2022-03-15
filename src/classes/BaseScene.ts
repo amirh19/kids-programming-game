@@ -1,5 +1,11 @@
 import Dino from "./Dino";
-import { BLOCK_SIZE, DINO_H, DINO_W } from "../constants";
+import {
+  BLOCK_SIZE,
+  DINO_H,
+  DINO_W,
+  GAME_HEIGHT,
+  GAME_WIDTH,
+} from "../constants";
 
 export default abstract class BaseScene extends Phaser.Scene {
   instructions: string[] = [];
@@ -11,14 +17,32 @@ export default abstract class BaseScene extends Phaser.Scene {
   pathToMap: string;
   goal: Phaser.Tilemaps.TilemapLayer;
   hasWon: boolean;
+  currentTextBox: Phaser.GameObjects.Text;
   constructor(sceneName: string, mapURI: string) {
     super(sceneName);
     this.pathToMap = mapURI;
   }
+
+  preloadMuisc() {
+    if (!this.cache.audio.exists("forest-theme")) {
+      this.load.audio("forest-theme", "assets/music/forest.mp3");
+    }
+  }
+
   preload() {
     this.preloadPlayerAssets();
     this.preloadMapAssets();
     this.preloadControlAssets();
+    this.preloadMuisc();
+  }
+  addMusic() {
+    const themeWasLoaded = this.sound.get("forest-theme");
+    if (!themeWasLoaded) {
+      const theme = this.sound.add("forest-theme", { volume: 1, loop: true });
+      if (!theme.isPlaying) {
+        theme.play();
+      }
+    }
   }
   preloadPlayerAssets() {
     Dino.preloadAssets(this, "red");
@@ -42,6 +66,15 @@ export default abstract class BaseScene extends Phaser.Scene {
     if (!this.textures.exists("arrow_right")) {
       this.load.image("arrow_right", "assets/KeyboardButtonsDir_right.png");
     }
+    if (!this.textures.exists("start")) {
+      this.load.image("start", "assets/start.png");
+    }
+    if (!this.textures.exists("fullscreen")) {
+      this.load.image("fullscreen", "assets/fullscreen.png");
+    }
+    if (!this.textures.exists("restart")) {
+      this.load.image("restart", "assets/restart.png");
+    }
   }
 
   create() {
@@ -49,8 +82,10 @@ export default abstract class BaseScene extends Phaser.Scene {
     this.createMapAndPlayer(3, 15);
     this.addCollition();
     this.createControls();
+    this.addMusic();
   }
   initValues() {
+    this.currentTextBox = undefined;
     this.hasWon = false;
     this.instructions = [];
     this.posX = 25;
@@ -59,14 +94,22 @@ export default abstract class BaseScene extends Phaser.Scene {
 
   createControls() {
     // draw controls
-    const arrow_up = this.add.image(640 + 75, 100, "arrow_up");
-    const arrow_down = this.add.image(640 + 75, 150, "arrow_down");
-    const arrow_left = this.add.image(640 + 25, 150, "arrow_left");
-    const arrow_right = this.add.image(640 + 125, 150, "arrow_right");
-    arrow_up.setInteractive();
-    arrow_down.setInteractive();
-    arrow_left.setInteractive();
-    arrow_right.setInteractive();
+    const arrow_up = this.add
+      .image(GAME_WIDTH - 75, GAME_HEIGHT - 200, "arrow_up")
+      .setAlpha(0.5)
+      .setInteractive();
+    const arrow_down = this.add
+      .image(GAME_WIDTH - 75, GAME_HEIGHT - 150, "arrow_down")
+      .setAlpha(0.5)
+      .setInteractive();
+    const arrow_left = this.add
+      .image(GAME_WIDTH - 125, GAME_HEIGHT - 150, "arrow_left")
+      .setAlpha(0.5)
+      .setInteractive();
+    const arrow_right = this.add
+      .image(GAME_WIDTH - 25, GAME_HEIGHT - 150, "arrow_right")
+      .setAlpha(0.5)
+      .setInteractive();
     arrow_up.on("pointerdown", () => {
       this.instructions.push("arrow_up");
       this.addNewArrow("arrow_up");
@@ -83,38 +126,53 @@ export default abstract class BaseScene extends Phaser.Scene {
       this.instructions.push("arrow_right");
       this.addNewArrow("arrow_right");
     });
-    const start = this.add.text(640 + 20, 300, "start");
-    start.setInteractive();
-    start.setText("Iniciar");
-    start.on(
-      "pointerdown",
-      function () {
-        start.destroy();
-        const count = this.instructions.length;
-        this.time.addEvent({
-          callback: () => {
-            const step = this.instructions.shift();
-            switch (step) {
-              case "arrow_up":
-                this.player.runUp();
-                break;
-              case "arrow_down":
-                this.player.runDown();
-                break;
-              case "arrow_left":
-                this.player.runLeft();
-                break;
-              case "arrow_right":
-                this.player.runRight();
-                break;
-            }
-          },
-          callbackScope: this,
-          delay: 1000,
-          repeat: count,
-        });
-      }.bind(this)
-    );
+    const start = this.add
+      .image(GAME_WIDTH / 2 - 125, GAME_HEIGHT - 36, "start")
+      .setDisplaySize(125, 50)
+      .setInteractive();
+    start.on("pointerdown", () => {
+      start.destroy();
+      const count = this.instructions.length;
+      this.time.addEvent({
+        callback: () => {
+          const step = this.instructions.shift();
+          switch (step) {
+            case "arrow_up":
+              this.player.runUp();
+              break;
+            case "arrow_down":
+              this.player.runDown();
+              break;
+            case "arrow_left":
+              this.player.runLeft();
+              break;
+            case "arrow_right":
+              this.player.runRight();
+              break;
+            case undefined:
+              this.playerDies();
+          }
+        },
+        callbackScope: this,
+        delay: 1000,
+        repeat: count,
+      });
+    });
+    const resetLevel = this.add
+      .image(GAME_WIDTH / 2, GAME_HEIGHT - 36, "restart")
+      .setDisplaySize(125, 50)
+      .setInteractive();
+    resetLevel.on("pointerdown", () => this.scene.restart());
+    const fullScreen = this.add
+      .image(GAME_WIDTH / 2 + 125, GAME_HEIGHT - 36, "fullscreen")
+      .setDisplaySize(125, 50)
+      .setInteractive();
+    fullScreen.on("pointerdown", () => {
+      if (this.scale.isFullscreen) {
+        return this.scale.stopFullscreen();
+      }
+      return this.scale.startFullscreen();
+    });
   }
 
   addCollition() {
@@ -124,14 +182,31 @@ export default abstract class BaseScene extends Phaser.Scene {
     this.player.body.setCollideWorldBounds(true);
   }
   playerDies() {
-    this.nextScene();
+    this.player.died();
+    this.time.addEvent({
+      callback: () => {
+        this.scene.restart();
+      },
+      callbackScope: this,
+      repeat: 0,
+      delay: 1000,
+    });
   }
   addNewArrow(type: string) {
-    this.add.image(this.posX, this.posY, type);
-    this.posX += 50;
-    if (840 - this.posX < 50) {
-      this.posX = 25;
-      this.posY += 50;
+    if (this.instructions[this.instructions.length - 2] === type) {
+      this.currentTextBox.setText(
+        (Number.parseInt(this.currentTextBox.text) + 1).toString()
+      );
+    } else {
+      this.add.image(this.posX, this.posY, type);
+      this.currentTextBox = this.add.text(this.posX + 35, this.posY - 25, "1", {
+        fontSize: "50px",
+      });
+      this.posX += 125;
+      if (GAME_WIDTH - this.posX < 55) {
+        this.posX = 25;
+        this.posY += 55;
+      }
     }
   }
   createMapAndPlayer(x: number, y: number) {
@@ -156,23 +231,17 @@ export default abstract class BaseScene extends Phaser.Scene {
     this.player.body.setSize(5, 5, true);
   }
   playerWon() {
-    this.add
-      .text(320, 320, "Ganaste", {
-        fontSize: "32",
-      })
-      .setScale(2);
+    this.hasWon = true;
+    this.scene.stop();
+    this.nextScene();
   }
   update(time: number, delta: number): void {
-    try {
-      if (!this.hasWon) {
-        const tile = this.goal.getTileAtWorldXY(this.player.x, this.player.y);
-        if (tile) {
-          this.hasWon = true;
-          this.playerWon();
-          this.nextScene();
-        }
+    if (!this.hasWon) {
+      const tile = this.goal.getTileAtWorldXY(this.player.x, this.player.y);
+      if (tile) {
+        this.playerWon();
       }
-    } catch (error) {}
+    }
   }
   nextScene() {
     this.scene.transition({ target: this.scene.key, duration: 0 });
