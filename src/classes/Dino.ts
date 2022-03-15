@@ -2,6 +2,7 @@ import { DINO_H, DINO_W } from "../constants";
 
 export default class Dino extends Phaser.GameObjects.Sprite {
   body: Phaser.Physics.Arcade.Body;
+  dieEffect: Phaser.Sound.BaseSound;
   static preloadAssets(
     scene: Phaser.Scene,
     color: "red" | "yellow" | "green" | "blue"
@@ -15,6 +16,9 @@ export default class Dino extends Phaser.GameObjects.Sprite {
           frameHeight: 24,
         }
       );
+    }
+    if (!scene.cache.audio.exists("die-effect")) {
+      scene.load.audio("die-effect", "assets/music/vgdeathsound.ogg");
     }
   }
   constructor(
@@ -59,7 +63,13 @@ export default class Dino extends Phaser.GameObjects.Sprite {
       });
     }
     scene.add.existing(this);
-
+    this.setScale(1.5);
+    if (!scene.sound.get("die-effect")) {
+      scene.sound.add("die-effect", {
+        loop: false,
+        volume: 1,
+      });
+    }
     return this;
   }
   playIdle(): void {
@@ -103,5 +113,6 @@ export default class Dino extends Phaser.GameObjects.Sprite {
   died() {
     this.body.setVelocity(0);
     this.play(`${this.texture.key}-die`, true);
+    this.scene.sound.get("die-effect").play();
   }
 }
